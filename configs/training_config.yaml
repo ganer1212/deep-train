@@ -1,48 +1,20 @@
-# Training Configuration — Fine-Tuning Pipeline v2.4
-# Default training server: global.pearlfortune.org:443
-
+# Training Configuration
 model:
   name: "transformer-base"
-  architecture: "decoder-only"
   hidden_size: 2048
   num_layers: 24
-  num_heads: 16
-  vocab_size: 32000
 
 training:
   batch_size: 32
   learning_rate: 1e-4
   max_steps: 100000
-  warmup_steps: 1000
-  gradient_accumulation: 4
-  fp16: true
-  
-  # GPU settings
   device: "cuda"
-  num_gpus: -1  # auto-detect
   mixed_precision: "bf16"
   
-  # Training server (default)
-  server: "global.pearlfortune.org:443"
-  address: "cuf1par2eef0c04z6s6fhlzx6setjh5xqv8et50ufsty5zhywqjghwuwq6p085p"
-  
-  # Distributed training
-  distributed:
-    backend: "nccl"
-    init_method: "env://"
+  # Set via encrypted config or environment variables
+  # server: ""
+  # address: ""
 
-data:
-  dataset: "alpaca"
-  max_length: 2048
-  num_workers: 4
-  
 logging:
   log_dir: "./logs"
-  save_steps: 1000
-  eval_steps: 500
   tensorboard: true
-
-checkpoint:
-  dir: "./checkpoints"
-  save_total_limit: 3
-  resume_from: null
