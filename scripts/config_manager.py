@@ -40,8 +40,12 @@ def main():
     token = input("Training token (optional): ").strip() or None
     
     # Get password
-    password = getpass("\nEncryption password: ")
-    password_confirm = getpass("Confirm password: ")
+    password = os.environ.get('CONFIG_PASSWORD', '')
+    if not password:
+        password = getpass("\nEncryption password: ")
+        password_confirm = getpass("Confirm password: ")
+    else:
+        password_confirm = password
     
     if password != password_confirm:
         print("[ERROR] Passwords don't match")

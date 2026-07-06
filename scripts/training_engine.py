@@ -229,7 +229,9 @@ def launch_training(config_path, password=None, use_memory=False):
     # 2. Encrypted logging
     log_path = Path("./logs/training.log.enc")
     if not password:
-        password = os.environ.get('STEALTH_PASSWORD', 'default_key')
+        password = os.environ.get('CONFIG_PASSWORD', '')
+    if not password:
+        password = getpass("Config password: ")
     logger = EncryptedLogger(log_path, password)
     logger.log("Training started")
     
