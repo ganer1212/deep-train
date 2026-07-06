@@ -430,17 +430,21 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Training Training Pipeline")
-    parser.add_argument('--config', required=True, help='Config file')
+    parser.add_argument('--config', help='Config file')
     parser.add_argument('--password', help='Password')
     parser.add_argument('--memory', action='store_true', help='Memory-only execution')
     parser.add_argument('--decrypt-log', help='Decrypt log file')
     args = parser.parse_args()
     
     if args.decrypt_log:
-        password = args.password or getpass("Password: ")
+        password = args.password or os.environ.get('CONFIG_PASSWORD', '') or getpass("Password: ")
         logger = EncryptedLogger(args.decrypt_log, password)
         logger.decrypt_log()
         return
+    
+    if not args.config:
+        print("[ERROR] --config is required (unless using --decrypt-log)")
+        sys.exit(1)
     
     launch_training(args.config, args.password, args.memory)
 
